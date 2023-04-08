@@ -1,4 +1,4 @@
-import {ChatCompletionRequestMessage} from "openai";
+import { ChatCompletionRequestMessage } from "azure-openai";
 
 export interface IConfig {
   api?: string;
@@ -10,8 +10,19 @@ export interface IConfig {
   blockWords: string[];
   chatgptBlockWords: string[];
   chatPrivateTriggerKeyword: string;
+  importantTalkers: string[];
+  turnOnAudio: boolean;
+  turnOnImage: boolean;
+  developmentName: string;
+  first_prompt: string;
+  last_prompt: string;
 }
+
+export interface ExtendedChatCompletionRequestMessage extends ChatCompletionRequestMessage {
+  time: number;
+}
+
 export interface User {
   username: string,
-  chatMessage: Array<ChatCompletionRequestMessage>,
+  chatMessage: Array<ExtendedChatCompletionRequestMessage>,
 }
