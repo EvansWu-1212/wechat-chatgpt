@@ -1,11 +1,13 @@
-import {ChatCompletionRequestMessage, ChatCompletionRequestMessageRoleEnum} from "openai";
-import {User} from "./interface";
-import {isTokenOverLimit} from "./utils.js";
+import { ChatCompletionRequestMessage, ChatCompletionRequestMessageRoleEnum } from "azure-openai";
+import { User } from "./interface";
+import { isTokenOverLimit } from "./utils.js";
+import { config } from "./config.js";
+
+const FIVE_MINUTES = 5 * 60 * 1000;
 
 /**
  * 使用内存作为数据库
  */
-
 class DB {
   private static data: User[] = [];
 
@@ -24,7 +26,8 @@ class DB {
       chatMessage: [
         {
           role: ChatCompletionRequestMessageRoleEnum.System,
-          content: "You are a helpful assistant."
+          content: config.first_prompt,
+          time: new Date().getTime()
         }
       ],
     };
@@ -45,7 +48,21 @@ class DB {
    * @param username
    */
   public getChatMessage(username: string): Array<ChatCompletionRequestMessage> {
-    return this.getUserByUsername(username).chatMessage;
+    const usersAllMessages = this.getUserByUsername(username).chatMessage;
+    const currentTime = new Date().getTime();
+    // filter those messages which is 5 minutes ago.
+    const userRecentlyMessages = usersAllMessages.filter((message, index) => {
+      // Skip filter the first prompt;
+      if (index == 0) {
+        return true;
+      }
+      return currentTime - message.time < FIVE_MINUTES
+    }).map(message => ({
+      role: message.role,
+      content: message.content
+    }));
+
+    return userRecentlyMessages;
   }
 
   /**
@@ -70,14 +87,35 @@ class DB {
   public addUserMessage(username: string, message: string): void {
     const user = this.getUserByUsername(username);
     if (user) {
-      while (isTokenOverLimit(user.chatMessage)){
+      while (isTokenOverLimit(user.chatMessage)) {
         // 删除从第2条开始的消息(因为第一条是prompt)
-        user.chatMessage.splice(1,1);
+        user.chatMessage.splice(1, 1);
       }
       user.chatMessage.push({
         role: ChatCompletionRequestMessageRoleEnum.User,
         content: message,
+        time: new Date().getTime()
       });
+    }
+  }
+
+  public removeLastUserMessage(username: string) {
+    const user = this.getUserByUsername(username);
+    if (user && user.chatMessage.length > 0) {
+      let removedMessage = user.chatMessage.pop();
+      console.log("Last message removed: " + removedMessage?.content);
+    }
+  }
+
+  public modifyLastPrompt(username: string, modifedPrompt: string) {
+    const user = this.getUserByUsername(username);
+    if (user && user.chatMessage.length > 0) {
+      let lastPrompt = user.chatMessage[user.chatMessage.length - 1];
+      console.log("Last message changed from: " + lastPrompt.content + "to : " + modifedPrompt);
+      user.chatMessage[user.chatMessage.length - 1].content = modifedPrompt;
+      return true;
+    } else {
+      return false;
     }
   }
 
@@ -89,13 +127,14 @@ class DB {
   public addAssistantMessage(username: string, message: string): void {
     const user = this.getUserByUsername(username);
     if (user) {
-      while (isTokenOverLimit(user.chatMessage)){
+      while (isTokenOverLimit(user.chatMessage)) {
         // 删除从第2条开始的消息(因为第一条是prompt)
-        user.chatMessage.splice(1,1);
+        user.chatMessage.splice(1, 1);
       }
       user.chatMessage.push({
         role: ChatCompletionRequestMessageRoleEnum.Assistant,
         content: message,
+        time: new Date().getTime()
       });
     }
   }
@@ -110,7 +149,8 @@ class DB {
       user.chatMessage = [
         {
           role: ChatCompletionRequestMessageRoleEnum.System,
-          content: "You are a helpful assistant."
+          content: config.first_prompt,
+          time: new Date().getTime()
         }
       ];
     }
