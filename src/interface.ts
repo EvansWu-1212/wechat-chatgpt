@@ -14,8 +14,6 @@ export interface IConfig {
   turnOnAudio: boolean;
   turnOnImage: boolean;
   developmentName: string;
-  first_prompt: string;
-  last_prompt: string;
 }
 
 export interface ExtendedChatCompletionRequestMessage extends ChatCompletionRequestMessage {

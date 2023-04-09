@@ -1,5 +1,5 @@
 import DBUtils from "./data.js";
-import { config } from "./config.js";
+import { config, getLastPrompt } from "./config.js";
 import axios from "axios";
 
 enum DebugLevel {
@@ -16,12 +16,15 @@ const warningAnswer = "无可奉告，不要总想搞个大新闻！";
  * @param message
  */
 async function chatgpt(username: string, message: string) {
+  console.log("-------------------------------------------------------")
+  console.log("Start Chatting with " + username + " With message:" + message);
+
   // 先将用户输入的消息添加到数据库中
   DBUtils.addUserMessage(username, message);
   const messages = DBUtils.getChatMessage(username);
 
   // try to add rule prompt appended in the last prompt;
-  messages[messages.length - 1].content += config.last_prompt;
+  messages[messages.length - 1].content += getLastPrompt(username);
 
   let url = `${config.api}/openai/deployments/${config.developmentName}/chat/completions?api-version=2023-03-15-preview`
   let requestConfig = {
@@ -47,7 +50,9 @@ async function chatgpt(username: string, message: string) {
   }
 
   let assistantMessage = null;
-  if (response && response.data && response.data.choices && response.data.choices.length != 0 && response.data.choices[0].message) {
+  if (response && response.data && response.data.choices && 
+      response.data.choices.length != 0 && response.data.choices[0].message != null && response.data.choices[0].message.content != null)
+  {
     assistantMessage = response.data.choices[0].message.content.replace(/^\n+|\n+$/g, "") as string;
   } else {
     assistantMessage = defaultAnswer;
@@ -59,8 +64,14 @@ async function chatgpt(username: string, message: string) {
     console.log("Violate the rule, remove the last prompt in the messages.")
     DBUtils.removeLastUserMessage(username);
   } else {
+    const lastPrompt = getLastPrompt(username);
+    let modifedPrompt = messages[messages.length - 1].content;
+
     // remove the added rule prompt appended in the last prompt;
-    let modifedPrompt = messages[messages.length - 1].content.split(config.last_prompt)[0];
+    if (lastPrompt.length > 0) {
+      modifedPrompt = messages[messages.length - 1].content.split(lastPrompt)[0];
+    }
+
     DBUtils.modifyLastPrompt(username, modifedPrompt);
     console.log(DBUtils.getChatMessage(username));
     console.log(`Finish Chatting with ${username}\n answers: ${assistantMessage}`,);

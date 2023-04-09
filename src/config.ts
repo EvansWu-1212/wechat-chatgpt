@@ -15,7 +15,25 @@ export const config: IConfig = {
   importantTalkers: process.env.SKIP_BLOCK_NAMES?.split(",") || [],
   turnOnAudio: process.env.TURN_ON_AUDIO == "true" || false,
   turnOnImage: process.env.TURN_ON_IMAGE == "true" || false,
-  developmentName: process.env.DEVELOPMENT_NAME || "chatgpt",
-  first_prompt: process.env.FIRST_PROMPT || "",
-  last_prompt: process.env.LAST_PROMPT || ""
+  developmentName: process.env.DEVELOPMENT_NAME || "chatgpt"
 };
+
+export function getFirstPrompt(username: string): string {
+  if (username != "" && config.importantTalkers.length > 0) {
+    if (config.importantTalkers.indexOf(username) >= 0) {
+      return process.env.FIRST_PROMPT_FOR_ADMIN!;
+    }
+  }
+
+  return process.env.FIRST_PROMPT!;
+}
+
+export function getLastPrompt(username: string): string {
+  if (username != "" && config.importantTalkers.length > 0) {
+    if (config.importantTalkers.indexOf(username) >= 0) {
+      return process.env.LAST_PROMPT_FOR_ADMIN!;
+    }
+  }
+
+  return process.env.LAST_PROMPT!;
+}

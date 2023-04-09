@@ -1,7 +1,7 @@
 import { ChatCompletionRequestMessage, ChatCompletionRequestMessageRoleEnum } from "azure-openai";
 import { User } from "./interface";
 import { isTokenOverLimit } from "./utils.js";
-import { config } from "./config.js";
+import { getFirstPrompt } from "./config.js";
 
 const FIVE_MINUTES = 5 * 60 * 1000;
 
@@ -26,7 +26,7 @@ class DB {
       chatMessage: [
         {
           role: ChatCompletionRequestMessageRoleEnum.System,
-          content: config.first_prompt,
+          content: getFirstPrompt(username),
           time: new Date().getTime()
         }
       ],
@@ -102,8 +102,8 @@ class DB {
   public removeLastUserMessage(username: string) {
     const user = this.getUserByUsername(username);
     if (user && user.chatMessage.length > 0) {
-      let removedMessage = user.chatMessage.pop();
-      console.log("Last message removed: " + removedMessage?.content);
+      user.chatMessage.pop();
+      console.log("Last message removed.");
     }
   }
 
@@ -111,7 +111,7 @@ class DB {
     const user = this.getUserByUsername(username);
     if (user && user.chatMessage.length > 0) {
       let lastPrompt = user.chatMessage[user.chatMessage.length - 1];
-      console.log("Last message changed from: " + lastPrompt.content + "to : " + modifedPrompt);
+      console.log("Last message changed from: " + lastPrompt.content + " to: " + modifedPrompt);
       user.chatMessage[user.chatMessage.length - 1].content = modifedPrompt;
       return true;
     } else {
@@ -149,7 +149,7 @@ class DB {
       user.chatMessage = [
         {
           role: ChatCompletionRequestMessageRoleEnum.System,
-          content: config.first_prompt,
+          content: getFirstPrompt(username),
           time: new Date().getTime()
         }
       ];
