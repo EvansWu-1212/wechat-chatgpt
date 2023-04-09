@@ -1,6 +1,7 @@
 import DBUtils from "./data.js";
-import { config, getLastPrompt } from "./config.js";
+import { config } from "./config.js";
 import axios from "axios";
+import { getLastPrompt } from "./prompts.js";
 
 enum DebugLevel {
   debug,

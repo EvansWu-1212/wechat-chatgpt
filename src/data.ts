@@ -1,7 +1,7 @@
 import { ChatCompletionRequestMessage, ChatCompletionRequestMessageRoleEnum } from "azure-openai";
 import { User } from "./interface";
 import { isTokenOverLimit } from "./utils.js";
-import { getFirstPrompt } from "./config.js";
+import { getFirstPrompt } from "./prompts.js";
 
 const FIVE_MINUTES = 5 * 60 * 1000;
 
